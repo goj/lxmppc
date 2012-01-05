@@ -8,6 +8,7 @@
 %% API exports
 -export([connect/1, stop/1]).
 
+-include_lib("exml/include/exml_stream.hrl").
 -include("lxmppc.hrl").
 
 -record(state, {owner, socket, parser}).
@@ -56,10 +57,17 @@ stop(#transport{rcv_pid=Pid}) ->
 loop(#state{owner = Owner, socket = Socket, parser = Parser} = State) ->
     receive
         {tcp, Socket, Data} ->
+            inet:setopts(Socket, [{active, once}]),
             {ok, NewParser, Stanzas} = exml_stream:parse(Parser, Data),
-            lists:foreach(fun(Stanza) ->
-                Owner ! stanza_msg(Socket, Stanza)
-            end, Stanzas),
+            lists:foldl(fun
+                (#xmlelement{} = Stanza, Acc) ->
+                    Owner ! stanza_msg(Socket, Stanza),
+                    Acc;
+                (#xmlstreamstart{}, Acc) ->
+                    error_logger:info_msg("restarting stream~n", []),
+                    %{ok, NewAcc} = exml_stream:reset_parser(Acc),
+                    Acc
+            end, NewParser, Stanzas),
             loop(State#state{parser = NewParser});
         stop ->
             exml_stream:free_parser(Parser);
@@ -70,6 +78,7 @@ loop(#state{owner = Owner, socket = Socket, parser = Parser} = State) ->
     end.
 
 stanza_msg(Socket, Stanza) ->
+    %% FIXME: fugly, will break when field is added to #transport
     Transport = #transport{module = ?MODULE,
                            socket = Socket,
                            rcv_pid = self()},

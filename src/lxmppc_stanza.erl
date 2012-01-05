@@ -14,7 +14,8 @@
 
 %% stanza - related exports
 -export([iq/2]).
--export([auth/1, auth_plain/2, bind/1, session/0]).
+-export([auth/1, auth_plain/2]).
+-export([bind/1, session/0]).
 
 %%--------------------------------------------------------------------
 %% Stream - related functions
@@ -53,9 +54,10 @@ auth(Mechanism) ->
 
 -spec auth_plain(binary(), binary()) -> #xmlelement{}.
 auth_plain(Username, Password) ->
-    Payload = <<Username/binary,0:8,Password/binary,0:8>>,
+    Payload = <<0:8,Username/binary,0:8,Password/binary>>,
     #xmlelement{name = <<"auth">>,
-                attrs = [{<<"xmlns">>, ?LXMMPPC_XMLNS_SASL}],
+                attrs = [{<<"xmlns">>, ?LXMMPPC_XMLNS_SASL},
+                         {<<"mechanism">>, <<"PLAIN">>}],
                 body = [#xmlcdata{content=base64:encode(Payload)}]}.
 
 -spec bind(binary()) -> #xmlelement{}.
