@@ -6,7 +6,7 @@
 -module(lxmppc_socket_tcp).
 
 %% API exports
--export([connect/1, stop/1]).
+-export([connect/1, reset_stream/1, stop/1]).
 
 -include_lib("exml/include/exml_stream.hrl").
 -include("lxmppc.hrl").
@@ -45,6 +45,10 @@ connect({Host, Port}) ->
         {error, {couldnt_connect, {Host, Port}, timeout}}
     end.
 
+reset_stream(#transport{rcv_pid = Pid}) ->
+    Pid ! reset_stream,
+    ok.
+
 -spec stop(#transport{}) -> ok.
 stop(#transport{rcv_pid=Pid}) ->
     Pid ! stop,
@@ -68,6 +72,9 @@ loop(#state{owner = Owner, socket = Socket, parser = Parser} = State) ->
                     %{ok, NewAcc} = exml_stream:reset_parser(Acc),
                     Acc
             end, NewParser, Stanzas),
+            loop(State#state{parser = NewParser});
+        reset_stream ->
+            {ok, NewParser} = exml_stream:reset_parser(Parser),
             loop(State#state{parser = NewParser});
         stop ->
             exml_stream:free_parser(Parser);
