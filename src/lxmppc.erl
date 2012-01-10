@@ -8,7 +8,7 @@
 -include_lib("exml/include/exml_stream.hrl").
 -include("lxmppc.hrl").
 
--export([connect/2, send/2, stop/1]).
+-export([connect/2, send/2, reset_stream/1, stop/1]).
 
 %%%===================================================================
 %%% Public API
@@ -21,6 +21,9 @@ connect(Type, Args) ->
 send(#transport{module = lxmppc_socket_tcp, socket = Socket}, Elem) ->
     Data = exml:to_iolist(Elem),
     gen_tcp:send(Socket, Data).
+
+reset_stream(#transport{module = Mod} = Transport) ->
+    Mod:reset_stream(Transport).
 
 stop(#transport{module = Mod} = Transport) ->
     Mod:stop(Transport).
