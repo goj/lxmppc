@@ -70,7 +70,8 @@ bind(Resource) ->
 
 -spec session() -> #xmlelement{}.
 session() ->
-    iq(<<"set">>, #xmlelement{name = <<"session">>}).
+    NS = <<"urn:ietf:params:xml:ns:xmpp-session">>,
+    iq(<<"set">>, #xmlelement{name = <<"session">>, attrs = [{<<"xmlns">>, NS}]}).
 
 %%--------------------------------------------------------------------
 %% Helpers
